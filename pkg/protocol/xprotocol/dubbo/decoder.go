@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"mosn.io/mosn/pkg/trace"
 	"sync"
 
 	hessian "github.com/apache/dubbo-go-hessian2"
@@ -194,7 +195,7 @@ func getServiceAwareMeta(ctx context.Context, frame *Frame) (map[string]string, 
 		}
 
 		// decode the attachment to get the real service and group parameters
-		if !matched && (listener == EgressDubbo || listener == IngressDubbo) {
+		if !matched && (listener == EgressDubbo || listener == IngressDubbo) || trace.IsEnabled() {
 			field, err = decoder.Decode()
 			if err != nil {
 				return nil, fmt.Errorf("[xprotocol][dubbo] decode dubbo argument types error, %v", err)

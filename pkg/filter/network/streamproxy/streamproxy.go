@@ -98,7 +98,7 @@ func (p *proxy) InitializeReadFilterCallbacks(cb api.ReadFilterCallbacks) {
 	p.requestInfo.SetDownstreamRemoteAddress(p.readCallbacks.Connection().RemoteAddr())
 	p.requestInfo.SetDownstreamLocalAddress(p.readCallbacks.Connection().LocalAddr())
 
-	p.readCallbacks.Connection().SetReadDisable(true)
+	// p.readCallbacks.Connection().SetReadDisable(true)
 
 	// TODO: set downstream connection stats
 }

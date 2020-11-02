@@ -690,7 +690,13 @@ func (arc *activeRawConn) ContinueFilterChain(ctx context.Context, success bool)
 		}
 	}
 
-	arc.activeListener.newConnection(ctx, arc.rawc)
+	// TODO: handle hand_off_restored_destination_connections logic
+	if arc.useOriginalDst {
+		ctx = mosnctx.WithValue(ctx, types.ContextOriRemoteAddr, arc.oriRemoteAddr)
+		arc.UseOriginalDst(ctx)
+	} else {
+		arc.activeListener.newConnection(ctx, arc.rawc)
+	}
 
 }
 
