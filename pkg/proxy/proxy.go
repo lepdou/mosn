@@ -20,6 +20,7 @@ package proxy
 import (
 	"container/list"
 	"context"
+	"net"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -154,8 +155,20 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 			} else {
 				size = buf.Len()
 			}
+			if p.context != nil {
+				val := p.context.Value(types.ContextOriRemoteAddr)
+				if val != nil {
+					oriRemoteAddr := val.(*net.TCPAddr)
+					if oriRemoteAddr != nil {
+						if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+							log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s magic :%v", oriRemoteAddr.String(), buf.Bytes()[:size])
+						}
+						return api.Continue
+					}
+				}
+			}
 			log.DefaultLogger.Alertf("proxy.auto", "[proxy] Protocol Auto error magic :%v", buf.Bytes()[:size])
-			// p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
+			p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
 			return api.Continue
 		}
 		log.DefaultLogger.Debugf("[proxy] Protoctol Auto: %v", protocol)
