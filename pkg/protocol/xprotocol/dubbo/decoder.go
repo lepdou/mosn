@@ -272,7 +272,7 @@ func decodeHessian(ctx context.Context, frame *Frame, meta map[string]string) (m
 		}
 
 		// decode the attachment to get the real service and group parameters
-		if !matched && (listener == EgressDubbo || listener == IngressDubbo) {
+		if !matched && (listener == EgressDubbo || listener == IngressDubbo) || trace.IsEnabled() {
 			field, err = decoder.Decode()
 			if err != nil {
 				return nil, fmt.Errorf("[xprotocol][dubbo] decode dubbo argument types error, %v", err)

@@ -24,9 +24,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/json-iterator/go"
 	"mosn.io/api"
-	v2 "mosn.io/mosn/pkg/config/v2"
+	"mosn.io/mosn/pkg/config/v2"
 	"mosn.io/mosn/pkg/configmanager"
 	mosnctx "mosn.io/mosn/pkg/context"
 	"mosn.io/mosn/pkg/log"
@@ -155,8 +155,8 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 				size = buf.Len()
 			}
 			log.DefaultLogger.Alertf("proxy.auto", "[proxy] Protocol Auto error magic :%v", buf.Bytes()[:size])
-			p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
-			return api.Stop
+			// p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
+			return api.Continue
 		}
 		log.DefaultLogger.Debugf("[proxy] Protoctol Auto: %v", protocol)
 		p.serverStreamConn = stream.CreateServerStreamConnection(p.context, protocol, p.readCallbacks.Connection(), p)
