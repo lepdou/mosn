@@ -105,8 +105,6 @@ func (fm *filterManager) onContinueReading(filter *activeReadFilter) {
 				//fm.conn.Write("your data")
 				return
 			}
-		} else {
-			return
 		}
 	}
 }
