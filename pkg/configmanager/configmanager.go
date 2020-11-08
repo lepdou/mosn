@@ -18,7 +18,7 @@
 package configmanager
 
 import (
-	v2 "mosn.io/mosn/pkg/config/v2"
+	"mosn.io/mosn/pkg/config/v2"
 	"mosn.io/mosn/pkg/log"
 )
 
@@ -280,6 +280,7 @@ func ResetServiceRegistryInfo(appInfo v2.ApplicationInfo, subServiceList []strin
 	config.ServiceRegistry.ServiceAppInfo = v2.ApplicationInfo{
 		AntShareCloud:    appInfo.AntShareCloud,
 		DataCenter:       appInfo.DataCenter,
+		Zone:             appInfo.Zone,
 		AppName:          appInfo.AppName,
 		DeployMode:       appInfo.DeployMode,
 		MasterSystem:     appInfo.MasterSystem,
