@@ -26,6 +26,8 @@ import (
 	"strings"
 	"sync"
 
+	"mosn.io/mosn/pkg/trace"
+
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"mosn.io/mosn/pkg/protocol"
 	"mosn.io/mosn/pkg/types"
