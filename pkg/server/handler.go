@@ -146,6 +146,18 @@ func (ch *connHandler) AddOrUpdateListener(lc *v2.Listener) (types.ListenerEvent
 		rawConfig.FilterChains[0].TLSContexts = lc.FilterChains[0].TLSContexts
 		rawConfig.FilterChains[0].TLSConfig = lc.FilterChains[0].TLSConfig
 		rawConfig.FilterChains[0].TLSConfigs = lc.FilterChains[0].TLSConfigs
+
+		// use global mtls config
+		if mtls.IsGlobalMTLS() {
+			if rawConfig.Type == "ingress" {
+				rawConfig.FilterChains[0].TLSContexts[0] = mtls.GlobalMTLS.ServerTLSContext
+				rawConfig.FilterChains[0].TLSConfig = &mtls.GlobalMTLS.ServerTLSContext
+			}
+			if rawConfig.Type == "egress" {
+				rawConfig.FilterChains[0].TLSContexts[0] = v2.TLSConfig{}
+			}
+		}
+
 		rawConfig.Inspector = lc.Inspector
 		mgr, err := mtls.NewTLSServerContextManager(rawConfig)
 		if err != nil {
@@ -567,7 +579,7 @@ func (al *activeListener) removeConnection(ac *activeConnection) {
 // defaultIdleTimeout represents the idle timeout if listener have no such configuration
 // we declared the defaultIdleTimeout reference to the types.DefaultIdleTimeout
 var (
-	defaultIdleTimeout = types.DefaultIdleTimeout
+	defaultIdleTimeout    = types.DefaultIdleTimeout
 	defaultUDPIdleTimeout = types.DefaultUDPIdleTimeout
 	defaultUDPReadTimeout = types.DefaultUDPReadTimeout
 )
