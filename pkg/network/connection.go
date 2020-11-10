@@ -1109,6 +1109,13 @@ func (cc *clientConnection) Connect() (err error) {
 
 			}
 
+			_, ok := cc.rawConnection.(*mtls.TLSConn)
+			if ok {
+				log.DefaultLogger.Debugf("[mtls] [client] use mtls conn l:%v, r:%v", cc.rawConnection.LocalAddr().String(), cc.rawConnection.RemoteAddr().String())
+			} else {
+				log.DefaultLogger.Debugf("[mtls] [client] unuse mtls conn l:%v, r:%v", cc.rawConnection.LocalAddr().String(), cc.rawConnection.RemoteAddr().String())
+			}
+
 			if err != nil {
 				event = api.ConnectFailed
 				cc.rawConnection.Close()
