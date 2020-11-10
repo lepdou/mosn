@@ -443,6 +443,13 @@ func (al *activeListener) OnAccept(rawc net.Conn, useOriginalDst bool, oriRemote
 		}
 	}
 
+	_, ok := rawc.(*mtls.TLSConn)
+	if ok {
+		log.DefaultLogger.Debugf("[mtls] [server] use mtls conn l:%v, r:%v, listener:%v", rawc.LocalAddr().String(), rawc.RemoteAddr().String(), al.listener.Name())
+	} else {
+		log.DefaultLogger.Debugf("[mtls] [server] unuse mtls conn l:%v, r:%v, listener:%v", rawc.LocalAddr().String(), rawc.RemoteAddr().String(), al.listener.Name())
+	}
+
 	arc := newActiveRawConn(rawc, al)
 
 	// listener filter chain.

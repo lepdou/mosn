@@ -20,6 +20,7 @@ package mtls
 import (
 	"net"
 	"reflect"
+	"strings"
 
 	"mosn.io/mosn/pkg/config/v2"
 	"mosn.io/mosn/pkg/log"
@@ -166,8 +167,14 @@ func (mng *clientContextManager) Conn(c net.Conn) (net.Conn, error) {
 	if !mng.Enabled() {
 		return c, nil
 	}
+
+	tlsConfig := mng.provider.GetTLSConfigContext(true).Config()
+	if tlsConfig.ServerName == "" {
+		tlsConfig.ServerName = strings.Split(c.RemoteAddr().String(), ":")[0]
+	}
+
 	return &TLSConn{
-		tls.Client(c, mng.provider.GetTLSConfigContext(true).Config()),
+		tls.Client(c, tlsConfig),
 	}, nil
 }
 
