@@ -131,6 +131,7 @@ func decodeFastjosn(ctx context.Context, frame *Frame, meta map[string]string) (
 		version          string
 		method           string
 		paramsTypes      string
+		attachmentsMap   map[string]string
 	)
 	arr := bytes.Split(frame.payload[:], []byte{10})
 	err = json.Unmarshal(arr[0], &frameworkVersion)
@@ -145,7 +146,7 @@ func decodeFastjosn(ctx context.Context, frame *Frame, meta map[string]string) (
 	}
 	meta[ServiceNameHeader] = path
 
-	// get method name
+	// get version name
 	err = json.Unmarshal(arr[2], &version)
 	if err != nil {
 		return nil, fmt.Errorf("[xprotocol][dubbo] fastjson decode method version fail")
@@ -161,6 +162,54 @@ func decodeFastjosn(ctx context.Context, frame *Frame, meta map[string]string) (
 	err = json.Unmarshal(arr[4], &paramsTypes)
 	if err != nil {
 		return nil, fmt.Errorf("[xprotocol][dubbo] fastjson decode paramsTypes fail")
+	}
+
+	if ctx != nil {
+		listener := ctx.Value(types.ContextKeyListenerName)
+
+		var (
+			node    *Node
+			matched bool
+		)
+
+		// for better performance.
+		// If the ingress scenario is not using group,
+		// we can skip parsing attachment to improve performance
+		if listener == IngressDubbo {
+			if node, matched = DubboPubMetadata.Find(path, version); matched {
+				meta[ServiceNameHeader] = node.Service
+				meta[GroupNameHeader] = node.Group
+			}
+		} else if listener == EgressDubbo {
+			// for better performance.
+			// If the egress scenario is not using group,
+			// we can skip parsing attachment to improve performance
+			if node, matched = DubboSubMetadata.Find(path, version); matched {
+				meta[ServiceNameHeader] = node.Service
+				meta[GroupNameHeader] = node.Group
+			}
+		}
+
+		// decode the attachment to get the real service and group parameters
+		if !matched && (listener == EgressDubbo || listener == IngressDubbo) || trace.IsEnabled() {
+
+			count := GetArgumentCount(paramsTypes)
+			attachments := arr[5+count]
+			err = json.Unmarshal(attachments, &attachmentsMap)
+			if err != nil {
+				return nil, fmt.Errorf("[xprotocol][dubbo] fastjosn decode dubbo attachments error, %v", err)
+			}
+			// we loop all attachments and check element type,
+			// we should only read string types.
+			for k, v := range attachmentsMap {
+				meta[k] = v
+				// we should use interface value,
+				// convenient for us to do service discovery.
+				if k == InterfaceNameHeader {
+					meta[ServiceNameHeader] = v
+				}
+			}
+		}
 	}
 
 	return meta, nil
@@ -489,11 +538,29 @@ func EncodeWorkLoad(headers types.HeaderMap, buf types.IoBuffer) ([]byte, error)
 	if err := json.Unmarshal(buf.Bytes(), &reqBody); err != nil {
 		return nil, err
 	}
+	if reqBody.Attachments == nil {
+		reqBody.Attachments = make(map[string]string)
+	}
+
+	//设置playload
+	headers.Range(func(key, value string) bool {
+		reqBody.Attachments[key] = value
+		return true
+	})
+
 	//service
 	serviceName := HeadGetDefault(headers, "service", "")
+	reqBody.Attachments["interface"] = serviceName
+
 	dubboVersion := HeadGetDefault(headers, "dubbo", "2.6.5")
 	serviceVersion := HeadGetDefault(headers, "version", "0.0.0")
+	reqBody.Attachments["version"] = serviceVersion
+
 	serviceMethod := HeadGetDefault(headers, "method", "")
+	serviceGroup := HeadGetDefault(headers, "group", "")
+	if serviceGroup != "" {
+		reqBody.Attachments["group"] = serviceGroup
+	}
 
 	dubboVersionByte := []byte(`"` + dubboVersion + `"`)
 	serviceNameByte := []byte(`"` + serviceName + `"`)
@@ -512,6 +579,7 @@ func EncodeWorkLoad(headers types.HeaderMap, buf types.IoBuffer) ([]byte, error)
 			paramesByte = append(paramesByte, []byte{10}...)
 		}
 	}
+
 	paramesTypeByte, _ := json.Marshal(paramesTypeStr)
 	attachmentsByte, _ := json.Marshal(reqBody.Attachments)
 
