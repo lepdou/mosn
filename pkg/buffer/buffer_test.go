@@ -19,7 +19,7 @@ package buffer
 
 import (
 	"context"
-	"runtime/debug"
+
 	"testing"
 )
 

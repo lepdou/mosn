@@ -20,13 +20,12 @@ import (
 	"math"
 	"net"
 	"reflect"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	v2 "mosn.io/mosn/pkg/config/v2"
+	"mosn.io/mosn/pkg/config/v2"
 	"mosn.io/mosn/pkg/log"
 	"mosn.io/mosn/pkg/network"
 	"mosn.io/mosn/pkg/types"
@@ -240,7 +239,7 @@ func (rt *ResolveTarget) StartResolve() {
 	defer func() {
 		if r := recover(); r != nil {
 			if log.DefaultLogger.GetLogLevel() >= log.ERROR {
-				log.DefaultLogger.Errorf("[upstream] [strict_dns_cluster] [resolver] panic %v\n%s", r, string(debug.Stack()))
+				log.DefaultLogger.Errorf("[upstream] [strict_dns_cluster] [resolver] panic %v\n%s", r, "")
 			}
 		}
 		rt.resolveTimer.Stop()

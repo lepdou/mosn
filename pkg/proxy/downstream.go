@@ -25,7 +25,7 @@ import (
 	nethttp "net/http"
 	"net/url"
 	"reflect"
-	"runtime/debug"
+
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -202,7 +202,7 @@ func (s *downStream) cleanStream() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] cleanStream panic: %v, downstream: %+v, streamID: %d\n%s",
-				r, s, s.ID, string(debug.Stack()))
+				r, s, s.ID, "")
 		}
 	}()
 
@@ -360,7 +360,7 @@ func (s *downStream) OnReceive(ctx context.Context, headers types.HeaderMap, dat
 		defer func() {
 			if r := recover(); r != nil {
 				log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] OnReceive panic: %v, downstream: %+v, oldId: %d, newId: %d\n%s",
-					r, s, id, s.ID, string(debug.Stack()))
+					r, s, id, s.ID, "")
 
 				if id == s.ID {
 					s.cleanStream()
@@ -919,7 +919,7 @@ func (s *downStream) onUpstreamRequestSent() {
 func (s *downStream) onResponseTimeout() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] onResponseTimeout() panic %v\n%s", r, string(debug.Stack()))
+			log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] onResponseTimeout() panic %v\n%s", r, "")
 		}
 	}()
 	s.cluster.Stats().UpstreamRequestTimeout.Inc(1)
@@ -971,7 +971,7 @@ func (s *downStream) setupPerReqTimeout() {
 func (s *downStream) onPerReqTimeout() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] onPerReqTimeout() panic %v\n%s", r, string(debug.Stack()))
+			log.Proxy.Alertf(s.context, types.ErrorKeyProxyPanic, "[proxy] [downstream] onPerReqTimeout() panic %v\n%s", r, "")
 		}
 	}()
 

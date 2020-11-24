@@ -19,7 +19,7 @@ package server
 
 import (
 	"os"
-	"runtime/debug"
+
 	"syscall"
 	"time"
 
@@ -116,7 +116,7 @@ func reconfigure(start bool) {
 func ReconfigureHandler() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.DefaultLogger.Errorf("[server] [reconfigure] transferServer panic %v\n%s", r, string(debug.Stack()))
+			log.DefaultLogger.Errorf("[server] [reconfigure] transferServer panic %v\n%s", r, "")
 		}
 	}()
 	time.Sleep(time.Second)

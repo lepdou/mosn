@@ -22,7 +22,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime/debug"
+
 	"strconv"
 	"sync"
 	"syscall"
@@ -127,7 +127,7 @@ func catchSignalsPosix() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.DefaultLogger.Errorf("panic %v\n%s", r, string(debug.Stack()))
+				log.DefaultLogger.Errorf("panic %v\n%s", r, "")
 			}
 		}()
 		shutdown := make(chan os.Signal, 1)
@@ -151,7 +151,7 @@ func catchSignalsPosix() {
 			go func() {
 				defer func() {
 					if r := recover(); r != nil {
-						log.DefaultLogger.Errorf("panic %v\n%s", r, string(debug.Stack()))
+						log.DefaultLogger.Errorf("panic %v\n%s", r, "")
 					}
 				}()
 				os.Exit(ExecuteShutdownCallbacks("SIGINT"))

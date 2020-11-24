@@ -26,7 +26,7 @@ import (
 	"net"
 	"os"
 	"reflect"
-	"runtime/debug"
+
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -830,7 +830,7 @@ func (c *connection) writeBufLen() (bufLen int) {
 func (c *connection) Close(ccType api.ConnectionCloseType, eventType api.ConnectionEvent) error {
 	defer func() {
 		if p := recover(); p != nil {
-			log.DefaultLogger.Errorf("[network] [close connection] panic %v\n%s", p, string(debug.Stack()))
+			log.DefaultLogger.Errorf("[network] [close connection] panic %v\n%s", p, "")
 		}
 	}()
 

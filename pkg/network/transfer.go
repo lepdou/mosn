@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"runtime/debug"
+
 	"strconv"
 	"sync"
 	"syscall"
@@ -156,7 +156,7 @@ func transferHandler(c net.Conn, handler types.ConnectionHandler, transferMap *s
 func transferRead(c *connection) (uint64, error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.DefaultLogger.Errorf("[network] [transfer] [read] panic %v\n%s", r, string(debug.Stack()))
+			log.DefaultLogger.Errorf("[network] [transfer] [read] panic %v\n%s", r, "")
 		}
 	}()
 	unixConn, err := net.Dial("unix", types.TransferConnDomainSocket)

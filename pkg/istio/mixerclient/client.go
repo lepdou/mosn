@@ -20,7 +20,7 @@ package mixerclient
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
+
 	"time"
 
 	"google.golang.org/grpc"
@@ -131,7 +131,7 @@ func (c *mixerClient) SendReport(request *v1.ReportRequest) *v1.ReportResponse {
 	response, err := c.client.Report(ctx, request)
 	defer cancel()
 	if err != nil {
-		log.DefaultLogger.Errorf("send report error: %v, stack: %s\n\n", err, string(debug.Stack()))
+		log.DefaultLogger.Errorf("send report error: %v, stack: %s\n\n", err, "")
 	}
 	return response
 }

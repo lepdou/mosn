@@ -20,7 +20,7 @@ package metrics
 import (
 	"fmt"
 	"runtime"
-	"runtime/debug"
+
 	"testing"
 	"time"
 
