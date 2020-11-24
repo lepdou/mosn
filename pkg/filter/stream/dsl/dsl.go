@@ -19,6 +19,7 @@ package dsl
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"mosn.io/api"
@@ -50,7 +51,7 @@ func NewDSLFilter(ctx context.Context, dsl *DSL) *DSLFilter {
 func (f *DSLFilter) OnReceive(ctx context.Context, headers api.HeaderMap, buf buffer.IoBuffer, trailers api.HeaderMap) api.StreamFilterStatus {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Proxy.Errorf(ctx, "[stream filter] [dsl] OnReceive() panic %v\n%s", r, "")
+			log.Proxy.Errorf(ctx, "[stream filter] [dsl] OnReceive() panic %v\n%s", r, string(debug.Stack()))
 		}
 	}()
 
@@ -79,7 +80,7 @@ func (f *DSLFilter) OnReceive(ctx context.Context, headers api.HeaderMap, buf bu
 func (f *DSLFilter) Append(ctx context.Context, headers api.HeaderMap, buf buffer.IoBuffer, trailers api.HeaderMap) api.StreamFilterStatus {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Proxy.Errorf(ctx, "[stream filter] [dsl] Append() panic %v\n%s", r, "")
+			log.Proxy.Errorf(ctx, "[stream filter] [dsl] Append() panic %v\n%s", r, string(debug.Stack()))
 		}
 	}()
 
@@ -108,7 +109,7 @@ func (f *DSLFilter) OnDestroy() {}
 func (f *DSLFilter) Log(ctx context.Context, reqHeaders api.HeaderMap, respHeaders api.HeaderMap, requestInfo api.RequestInfo) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Proxy.Errorf(ctx, "[stream filter] [dsl] Log() panic %v\n%s", r, "")
+			log.Proxy.Errorf(ctx, "[stream filter] [dsl] Log() panic %v\n%s", r, string(debug.Stack()))
 		}
 	}()
 
