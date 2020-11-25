@@ -145,6 +145,7 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 		if conn, ok := p.readCallbacks.Connection().RawConn().(*mtls.TLSConn); ok {
 			prot = conn.ConnectionState().NegotiatedProtocol
 		}
+		var oriRemoteAddr *net.TCPAddr
 		protocol, err := stream.SelectStreamFactoryProtocol(p.context, prot, buf.Bytes())
 		if err == stream.EAGAIN {
 			return api.Stop
@@ -158,7 +159,7 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 			if p.context != nil {
 				val := p.context.Value(types.ContextOriRemoteAddr)
 				if val != nil {
-					oriRemoteAddr := val.(*net.TCPAddr)
+					oriRemoteAddr = val.(*net.TCPAddr)
 					if oriRemoteAddr != nil {
 						if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 							log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s magic :%v", oriRemoteAddr.String(), buf.Bytes()[:size])
@@ -169,6 +170,12 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 			}
 			log.DefaultLogger.Alertf("proxy.auto", "[proxy] Protocol Auto error magic :%v", buf.Bytes()[:size])
 			p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
+			return api.Stop
+		}
+		if oriRemoteAddr != nil && p.config.DownstreamProtocol != "Http1" {
+			if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+				log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s no http1", oriRemoteAddr.String())
+			}
 			return api.Continue
 		}
 		log.DefaultLogger.Debugf("[proxy] Protoctol Auto: %v", protocol)
