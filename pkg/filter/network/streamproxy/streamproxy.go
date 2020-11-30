@@ -77,6 +77,9 @@ func (p *proxy) OnData(buffer buffer.IoBuffer) api.FilterStatus {
 	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 		log.DefaultLogger.Debugf("[%s proxy] [ondata] read data , len = %v", p.network, buffer.Len())
 	}
+	if p.requestInfo.UpstreamLocalAddress() == "" {
+		p.initializeUpstreamConnection()
+	}
 	bytesRecved := p.requestInfo.BytesReceived() + uint64(buffer.Len())
 	p.requestInfo.SetBytesReceived(bytesRecved)
 
@@ -89,7 +92,8 @@ func (p *proxy) OnNewConnection() api.FilterStatus {
 	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 		log.DefaultLogger.Debugf("[%s proxy] [new conn] accept new connection", p.network)
 	}
-	return p.initializeUpstreamConnection()
+	//api.p.initializeUpstreamConnection()
+	return api.Continue
 }
 
 func (p *proxy) InitializeReadFilterCallbacks(cb api.ReadFilterCallbacks) {
