@@ -118,10 +118,19 @@ func (p *proxy) initializeUpstreamConnection() api.FilterStatus {
 
 	var connectionData types.CreateConnectionData
 	addr := p.ctx.Value(types.ContextOriRemoteAddr)
+	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+		log.DefaultLogger.Debugf("%s proxy connect to upstream clusterName = %s", p.network, clusterName)
+	}
 	if len(clusterName) == 0 && addr != nil {
 		ori := addr.(*net.TCPAddr)
 		if ori == nil {
+			if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+				log.DefaultLogger.Debugf("%s proxy connect to upstream origin addr = %+v", p.network, addr)
+			}
 			return api.Stop
+		}
+		if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+			log.DefaultLogger.Debugf("%s proxy connect to upstream origin destination = %s", p.network, ori.String())
 		}
 		connectionData = p.TCPConnForTransparentProxy(ori)
 	} else {
@@ -190,6 +199,10 @@ func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnec
 		}
 	}
 
+	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+		log.DefaultLogger.Debugf("%s proxy connect to upstream origin finalUpstreamHost = %+v", p.network, finalUpstreamHost)
+	}
+
 	config := v2.Host{
 		HostConfig: v2.HostConfig{
 			Address: finalUpstreamHost,
@@ -198,7 +211,15 @@ func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnec
 
 	tpc := p.getTransparentProxyCluster()
 
+	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+		log.DefaultLogger.Debugf("%s proxy connect to upstream cluster = %+v", p.network, tpc)
+	}
+
 	newHost := cluster.NewSimpleHost(config, tpc.Snapshot().ClusterInfo())
+
+	if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+		log.DefaultLogger.Debugf("%s proxy connect to upstream hosts = %+v", p.network, newHost)
+	}
 
 	clientConn := network.NewClientConnection(nil, tpc.Snapshot().ClusterInfo().ConnectTimeout(),
 		tpc.Snapshot().ClusterInfo().TLSMng(), p.readCallbacks.Connection().RemoteAddr(), nil)
