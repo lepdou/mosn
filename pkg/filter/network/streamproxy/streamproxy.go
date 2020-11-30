@@ -192,10 +192,11 @@ func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnec
 	finalUpstreamHost := addr.String()
 	listenerType := p.ctx.Value(types.ContextKeyListenerType)
 	if listenerType == v2.INGRESS {
-		finalUpstreamHost = "127.0.0.1"
 		ipAndPort := strings.Split(finalUpstreamHost, ":")
 		if len(ipAndPort) >= 2 {
-			finalUpstreamHost = finalUpstreamHost + ":" + ipAndPort[1]
+			finalUpstreamHost = "127.0.0.1:" + ipAndPort[1]
+		} else {
+			finalUpstreamHost = "127.0.0.1"
 		}
 	}
 
