@@ -22,6 +22,7 @@ import (
 	"context"
 	"net"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -172,7 +173,7 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 			p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
 			return api.Stop
 		}
-		if oriRemoteAddr != nil && p.config.DownstreamProtocol != "Http1" {
+		if oriRemoteAddr != nil && strings.EqualFold(p.config.DownstreamProtocol, "Http1") {
 			if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 				log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s no http1", oriRemoteAddr.String())
 			}
