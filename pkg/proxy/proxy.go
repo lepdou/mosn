@@ -22,6 +22,7 @@ import (
 	"context"
 	"net"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -148,6 +149,18 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 		var oriRemoteAddr *net.TCPAddr
 		protocol, err := stream.SelectStreamFactoryProtocol(p.context, prot, buf.Bytes())
 		if err == stream.EAGAIN {
+			if p.context != nil {
+				val := p.context.Value(types.ContextOriRemoteAddr)
+				if val != nil {
+					oriRemoteAddr = val.(*net.TCPAddr)
+					if oriRemoteAddr != nil {
+						if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+							log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s for again", oriRemoteAddr.String())
+						}
+						return api.Continue
+					}
+				}
+			}
 			return api.Stop
 		} else if err == stream.FAILED {
 			var size int
@@ -172,7 +185,7 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 			p.readCallbacks.Connection().Close(api.NoFlush, api.OnReadErrClose)
 			return api.Stop
 		}
-		if oriRemoteAddr != nil && p.config.DownstreamProtocol != "Http1" {
+		if oriRemoteAddr != nil && strings.EqualFold(p.config.DownstreamProtocol, "Http1") {
 			if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 				log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s no http1", oriRemoteAddr.String())
 			}
