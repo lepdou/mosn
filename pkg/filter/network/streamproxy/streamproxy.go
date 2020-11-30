@@ -204,6 +204,11 @@ func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnec
 		log.DefaultLogger.Debugf("%s proxy connect to upstream origin finalUpstreamHost = %+v", p.network, finalUpstreamHost)
 	}
 
+	finalRemoteAddr, err := net.ResolveTCPAddr("tcp", finalUpstreamHost)
+	if err != nil {
+		log.DefaultLogger.Errorf("%s proxy connect to upstream resolve finalUpstream address %s error = %+v", p.network, finalUpstreamHost, err)
+	}
+
 	config := v2.Host{
 		HostConfig: v2.HostConfig{
 			Address: finalUpstreamHost,
@@ -223,7 +228,7 @@ func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnec
 	}
 
 	clientConn := network.NewClientConnection(nil, tpc.Snapshot().ClusterInfo().ConnectTimeout(),
-		tpc.Snapshot().ClusterInfo().TLSMng(), p.readCallbacks.Connection().RemoteAddr(), nil)
+		tpc.Snapshot().ClusterInfo().TLSMng(), finalRemoteAddr, nil)
 	clientConn.SetBufferLimit(tpc.Snapshot().ClusterInfo().ConnBufferLimitBytes())
 
 	return types.CreateConnectionData{
