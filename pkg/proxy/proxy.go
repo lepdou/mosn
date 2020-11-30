@@ -149,6 +149,18 @@ func (p *proxy) OnData(buf buffer.IoBuffer) api.FilterStatus {
 		var oriRemoteAddr *net.TCPAddr
 		protocol, err := stream.SelectStreamFactoryProtocol(p.context, prot, buf.Bytes())
 		if err == stream.EAGAIN {
+			if p.context != nil {
+				val := p.context.Value(types.ContextOriRemoteAddr)
+				if val != nil {
+					oriRemoteAddr = val.(*net.TCPAddr)
+					if oriRemoteAddr != nil {
+						if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
+							log.DefaultLogger.Debugf("proxy.auto", "[proxy] Protocol Auto proxy %s for again", oriRemoteAddr.String())
+						}
+						return api.Continue
+					}
+				}
+			}
 			return api.Stop
 		} else if err == stream.FAILED {
 			var size int
