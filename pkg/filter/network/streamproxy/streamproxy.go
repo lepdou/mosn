@@ -21,6 +21,7 @@ import (
 	"context"
 	"mosn.io/mosn/pkg/configmanager"
 	"net"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -195,7 +196,12 @@ func (p *proxy) initializeUpstreamConnection() api.FilterStatus {
 func (p *proxy) TCPConnForTransparentProxy(addr *net.TCPAddr) types.CreateConnectionData {
 	finalUpstreamHost := addr.String()
 	listenerType := p.ctx.Value(types.ContextKeyListenerType)
-	if listenerType == v2.INGRESS {
+
+	mockInboundIp := os.Getenv("MOSN_TP_MOCK_INBOUND_IP_TO_LO")
+	if mockInboundIp == "" {
+		mockInboundIp = "true"
+	}
+	if mockInboundIp == "true" && listenerType == v2.INGRESS {
 		ipAndPort := strings.Split(finalUpstreamHost, ":")
 		if len(ipAndPort) >= 2 {
 			finalUpstreamHost = "127.0.0.1:" + ipAndPort[1]
