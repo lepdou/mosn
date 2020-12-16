@@ -99,6 +99,27 @@ func decodeStr(bytes []byte, totalLen, index int) (str []byte, newIndex int, err
 		return nil, end, fmt.Errorf("decode bolt header failed, index %d, length %d, totalLen %d, bytes %v\n", index, length, totalLen, bytes)
 	}
 
+	var dst = make([]byte, length)
+	if ok, err := blockCopy(bytes, index+4, dst, 0, int(length)); ok && err == nil {
+		return dst, end, nil
+	}
 	// 2. read str value
 	return bytes[index+4 : end], end, nil
+}
+
+func blockCopy(src []byte, srcOffset int, dst []byte, dstOffset, count int) (bool, error) {
+	srcLen := len(src)
+	if srcOffset > srcLen || count > srcLen || srcOffset+count > srcLen {
+		return false, fmt.Errorf("blockCopy src index invalid, srcOffset %d, dstOffset %d, count %d", srcOffset, dstOffset, count)
+	}
+	dstLen := len(dst)
+	if dstOffset > dstLen || count > dstLen || dstOffset+count > dstLen {
+		return false, fmt.Errorf("blockCopy dst index invalid, srcOffset %d, dstOffset %d, count %d", srcOffset, dstOffset, count)
+	}
+	index := 0
+	for i := srcOffset; i < srcOffset+count; i++ {
+		dst[dstOffset+index] = src[srcOffset+index]
+		index++
+	}
+	return true, nil
 }
