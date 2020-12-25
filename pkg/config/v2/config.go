@@ -29,9 +29,10 @@ import (
 // Servers contains the listener, filter and so on
 // ClusterManager used to manage the upstream
 type MOSNConfig struct {
-	Servers             []ServerConfig             `json:"servers,omitempty"`         //server config
-	ClusterManager      ClusterManagerConfig       `json:"cluster_manager,omitempty"` //cluster config
-	CloseGraceful       bool                       `json:"close_graceful,omitempty"`  // graceful switch, default false
+	Servers        []ServerConfig       `json:"servers,omitempty"`         //server config
+	ClusterManager ClusterManagerConfig `json:"cluster_manager,omitempty"` //cluster config
+
+	//tracing config
 	Tracing             TracingConfig              `json:"tracing,omitempty"`
 	Metrics             MetricsConfig              `json:"metrics,omitempty"`
 	RawDynamicResources json.RawMessage            `json:"dynamic_resources,omitempty"` //dynamic_resources raw message
@@ -41,6 +42,15 @@ type MOSNConfig struct {
 	Pid                 string                     `json:"pid,omitempty"`     // pid file
 	Plugin              PluginConfig               `json:"plugin,omitempty"`  // plugin config
 	Extends             map[string]json.RawMessage `json:"extends,omitempty"` // extend config
+
+	// global mtls config
+	GlobalMTLS GlobalMTLSConfig `json:"global_mtls"`
+}
+
+// ExtendItem is used to set global mtls context
+type GlobalMTLSConfig struct {
+	ClientTLSContext TLSConfig `json:"client_tls_context"`
+	ServerTLSContext TLSConfig `json:"server_tls_context"`
 }
 
 // PProfConfig is used to start a pprof server for debug
