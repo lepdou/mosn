@@ -19,14 +19,24 @@ package healthcheck
 
 import (
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"mosn.io/mosn/pkg/log"
 	"mosn.io/mosn/pkg/types"
 )
 
-const TimeoutCfgKey = "timeout"
-const defaultTimeout = uint32(30)
+const (
+	TimeoutCfgKey = "timeout"
+	PortCfgKey    = "port"
+	PathCfgKey    = "path"
+)
+
+const (
+	defaultTimeout = uint32(30)
+)
 
 func init() {
 	httpDialSessionFactory := &HTTPDialSessionFactory{}
@@ -34,27 +44,73 @@ func init() {
 	RegisterSessionFactory("Http1", httpDialSessionFactory)
 }
 
+type HTTPDialSession struct {
+	timeout uint32
+	*url.URL
+}
+
 type HTTPDialSessionFactory struct{}
 
-func (f *HTTPDialSessionFactory) NewSession(cfg map[string]interface{}, host types.Host) types.HealthCheckSession {
-	var ret HTTPDialSession
+func parseHostToURL(host types.Host) (*url.URL, error) {
+	// first try, something like: http://127.0.0.1:3399/hi
+	addressStr := host.AddressString()
+	u, err := url.Parse(addressStr)
+	if err == nil {
+		return u, nil
+	}
 
-	ret.timeout = defaultTimeout
+	// try to parse something like: 127.0.0.1:9900
+	var ret = &url.URL{}
+	ret.Scheme = "http"
+	ret.Host = addressStr
+
+	return ret, nil
+}
+
+func (f *HTTPDialSessionFactory) NewSession(cfg map[string]interface{}, host types.Host) types.HealthCheckSession {
+	var ret = &HTTPDialSession{}
+
+	u, err := parseHostToURL(host)
+	if err != nil {
+		log.DefaultLogger.Errorf("[upstream] [health check] [httpdial session] parseHostToURL for host %+v error: %v", host, err)
+		return nil
+	}
+
+	ret.URL = u
+
+	// re-config port
+	if v, ok := cfg[PortCfgKey]; ok {
+		if vv, ok := v.(int); ok {
+			address := strings.Split(u.Host, ":")
+			// no port
+			switch len(address) {
+			case 1:
+				address = append(address, strconv.Itoa(vv))
+			case 2:
+				address[1] = strconv.Itoa(vv)
+			default:
+				log.DefaultLogger.Errorf("[upstream] [health check] [httpdial session] unexcepted address splits: %v", address)
+				return nil
+			}
+			ret.URL.Host = strings.Join(address, ":")
+		}
+	}
+
+	if v, ok := cfg[PathCfgKey]; ok {
+		if vv, ok := v.(string); ok {
+			ret.URL.Path = vv
+		}
+	}
 
 	if v, ok := cfg[TimeoutCfgKey]; ok {
 		if vv, ok := v.(uint32); ok {
 			ret.timeout = vv
 		}
+	} else {
+		ret.timeout = defaultTimeout
 	}
 
-	ret.url = host.AddressString()
-
-	return &ret
-}
-
-type HTTPDialSession struct {
-	url     string
-	timeout uint32
+	return ret
 }
 
 func (s *HTTPDialSession) CheckHealth() bool {
@@ -62,10 +118,10 @@ func (s *HTTPDialSession) CheckHealth() bool {
 	client := http.Client{
 		Timeout: time.Second * time.Duration(s.timeout),
 	}
-	resp, err := client.Get(s.url)
+	resp, err := client.Get(s.String())
 	if err != nil {
 		if log.DefaultLogger.GetLogLevel() >= log.INFO {
-			log.DefaultLogger.Infof("[upstream] [health check] [tcpdial session] dial tcp for host %s error: %v", s.url, err)
+			log.DefaultLogger.Infof("[upstream] [health check] [httpdial session] dial tcp for host %s error: %v", s.String(), err)
 		}
 		return false
 	}
