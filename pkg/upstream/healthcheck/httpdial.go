@@ -18,9 +18,10 @@
 package healthcheck
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
+	"reflect"
 	"strings"
 	"time"
 
@@ -80,19 +81,23 @@ func (f *HTTPDialSessionFactory) NewSession(cfg map[string]interface{}, host typ
 
 	// re-config port
 	if v, ok := cfg[PortCfgKey]; ok {
-		if vv, ok := v.(int); ok {
+		if _, ok := v.(int); ok {
+			portStr := fmt.Sprintf("%d", v)
 			address := strings.Split(u.Host, ":")
-			// no port
+
 			switch len(address) {
 			case 1:
-				address = append(address, strconv.Itoa(vv))
+				address = append(address, portStr)
 			case 2:
-				address[1] = strconv.Itoa(vv)
+				address[1] = portStr
 			default:
 				log.DefaultLogger.Errorf("[upstream] [health check] [httpdial session] unexcepted address splits: %v", address)
 				return nil
 			}
 			ret.URL.Host = strings.Join(address, ":")
+		} else {
+			log.DefaultLogger.Errorf("[upstream] [health check] [httpdial session] unexcepted port number type: %+v", reflect.TypeOf(v))
+			return nil
 		}
 	}
 
@@ -121,7 +126,7 @@ func (s *HTTPDialSession) CheckHealth() bool {
 	resp, err := client.Get(s.String())
 	if err != nil {
 		if log.DefaultLogger.GetLogLevel() >= log.INFO {
-			log.DefaultLogger.Infof("[upstream] [health check] [httpdial session] dial tcp for host %s error: %v", s.String(), err)
+			log.DefaultLogger.Infof("[upstream] [health check] [httpdial session] http check for host %s error: %v", s.String(), err)
 		}
 		return false
 	}
