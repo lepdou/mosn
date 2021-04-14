@@ -432,6 +432,80 @@ func TestRunSenderFiltersTermination(t *testing.T) {
 	}
 }
 
+func TestRunSenderFiltersReChooseHost(t *testing.T) {
+	tc := struct {
+		filters []*mockStreamSenderFilter
+	}{
+		filters: []*mockStreamSenderFilter{
+			{
+				status: api.StreamFilterContinue,
+			},
+			{
+				status: api.StreamFilterReChooseHost,
+			},
+			{
+				status: api.StreamFilterContinue,
+			},
+		},
+	}
+	h := &mockHost{}
+	s := &downStream{
+		context: context.Background(),
+		proxy: &proxy{
+			config: &v2.Proxy{},
+			routersWrapper: &mockRouterWrapper{
+				routers: &mockRouters{
+					route: &mockRoute{},
+				},
+			},
+			clusterManager:   &mockClusterManager{},
+			readCallbacks:    &mockReadFilterCallbacks{},
+			stats:            globalStats,
+			listenerStats:    newListenerStats("test"),
+			serverStreamConn: &mockServerConn{},
+		},
+		responseSender: &mockResponseSender{},
+		requestInfo:    &network.RequestInfo{},
+		snapshot:       &mockClusterSnapshot{
+			hostSet: &mockHostSet{
+				hosts: []types.Host{
+					h,
+				},
+			},
+		},
+	}
+	for _, f := range tc.filters {
+		f.s = s
+		s.AddStreamSenderFilter(f)
+	}
+
+	// test with healthy host
+	s.runAppendFilters(0, nil, nil, nil)
+	if s.downstreamRespHeaders == nil || s.downstreamRespDataBuf == nil {
+		t.Errorf("streamSendFilter SetResponse error")
+	}
+	// should re-choosehost when there is healthy host
+	if tc.filters[0].on != 1 || tc.filters[1].on != 1 || tc.filters[2].on != 0 {
+		t.Errorf("streamSendFilter is error")
+	}
+	if s.receiverFiltersAgainPhase != types.ChooseHost {
+		t.Errorf("streamSendFilter choosehost is error")
+	}
+
+	// test with no healthy host
+	s.senderFiltersIndex = 0
+	h.SetHealthFlag(api.FAILED_ACTIVE_HC)
+	s.runAppendFilters(0, nil, nil, nil)
+	if s.downstreamRespHeaders == nil || s.downstreamRespDataBuf == nil {
+		t.Errorf("streamSendFilter SetResponse error")
+	}
+
+	// should continue when there is no healthy host
+	if tc.filters[0].on != 2 || tc.filters[1].on != 2 || tc.filters[2].on != 1 {
+		t.Errorf("streamSendFilter is error")
+	}
+}
+
 // Mock stream filters
 type mockStreamReceiverFilter struct {
 	handler api.StreamReceiverFilterHandler

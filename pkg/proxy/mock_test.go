@@ -122,10 +122,37 @@ func (m *mockClusterManager) PutClusterSnapshot(snapshot types.ClusterSnapshot) 
 
 type mockClusterSnapshot struct {
 	types.ClusterSnapshot
+	hostSet types.HostSet
 }
 
 func (mcs *mockClusterSnapshot) ClusterInfo() types.ClusterInfo {
 	return nil
+}
+
+func (mcs *mockClusterSnapshot) HostSet() types.HostSet {
+	return mcs.hostSet
+}
+
+type mockHostSet struct {
+	types.HostSet
+	hosts []types.Host
+}
+
+func (mhs *mockHostSet) Hosts() []types.Host {
+	return mhs.hosts
+}
+
+type mockHost struct {
+	types.Host
+	healthFlags uint64
+}
+
+func (mh *mockHost) Health() bool {
+	return mh.healthFlags == 0
+}
+
+func (mh *mockHost) SetHealthFlag(flag api.HealthFlag) {
+	mh.healthFlags |= uint64(flag)
 }
 
 type mockResponseSender struct {
