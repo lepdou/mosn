@@ -304,7 +304,9 @@ func (cm *clusterManager) ConnPoolForCluster(balancerContext types.LoadBalancerC
 }
 
 const (
-	maxHostsCounts  = 3
+	//Because each retrial does not exclude the selected machine with problems,
+	//increasing the number of retries improves the probability of selecting healthy machine.
+	maxHostsCounts  = 5
 	maxTryConnTimes = 7
 )
 
@@ -329,6 +331,10 @@ func (cm *clusterManager) getActiveConnectionPool(balancerContext types.LoadBala
 	if try > maxHostsCounts {
 		try = maxHostsCounts
 	}
+
+	//In order to improve the success rate of retrial, the failed host is added to the blacklist
+	blackHosts := map[string]struct{}{}
+
 	for i := 0; i < try; i++ {
 		host := clusterSnapshot.LoadBalancer().ChooseHost(balancerContext)
 		if host == nil {
@@ -336,6 +342,12 @@ func (cm *clusterManager) getActiveConnectionPool(balancerContext types.LoadBala
 		}
 
 		addr := host.AddressString()
+
+		//Select the host in the blacklist and try again directly
+		if _, ok := blackHosts[addr]; ok {
+			continue
+		}
+
 		if log.DefaultLogger.GetLogLevel() >= log.DEBUG {
 			log.DefaultLogger.Debugf("[upstream] [cluster manager] clusterSnapshot.loadbalancer.ChooseHost result is %s, cluster name = %s", addr, clusterSnapshot.ClusterInfo().Name())
 		}
@@ -392,6 +404,9 @@ func (cm *clusterManager) getActiveConnectionPool(balancerContext types.LoadBala
 			return pool, nil
 		}
 		pools[i] = pool
+
+		//The selected host failed to check and was added to the blacklist
+		blackHosts[addr] = struct{}{}
 	}
 
 	// perhaps the first request, wait for tcp handshaking. total wait time is 1ms + 10ms + (100ms * 5)
